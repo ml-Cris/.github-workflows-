@@ -10,29 +10,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
       - name: Install dependencies
-        run: pip install requests pandas openai
+        run: pip install requests pandas google-generativeai
 
       - name: Run scraper
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: |
-          # 先列出目前檔案，讓我們在 Log 裡看清楚路徑
-          ls -R
-          # 執行爬蟲（確保 scraper.py 在根目錄）
-          python scraper.py
-          
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python scraper.py
+
       - name: Commit and push
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add competitor_data.csv || echo "No data to add"
-          git commit -m "Auto update Dcard sentiment data" || exit 0
+          git add competitor_data.csv || echo "No data file to add"
+          git commit -m "Auto update with Gemini" || exit 0
           git push
