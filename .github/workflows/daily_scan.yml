@@ -1,1 +1,54 @@
+import requests
+import pandas as pd
+from datetime import datetime
+import os
+import time
 
+def fetch_competitors():
+    # 定義你要監測的品牌關鍵字
+    competitors = ["凱基證券", "國泰證券", "元大證券", "富邦證券", "永豐金證券"]
+    
+    all_new_data = []
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+
+    for brand in competitors:
+        print(f"正在抓取: {brand}...")
+        # 抓取 Dcard 股票版搜尋結果
+        url = f"https://www.dcard.tw/_api/search/posts?query={brand}&forum=stock&limit=10"
+        
+        try:
+            res = requests.get(url, headers=headers)
+            if res.status_code == 200:
+                posts = res.json()
+                for p in posts:
+                    all_new_data.append({
+                        "collect_date": datetime.now().strftime("%Y-%m-%d"),
+                        "brand": brand,
+                        "title": p['title'],
+                        "likeCount": p['likeCount'],
+                        "commentCount": p['commentCount'],
+                        "topics": ",".join(p.get('topics', [])) # 抓取標籤
+                    })
+            else:
+                print(f"{brand} 抓取失敗，錯誤碼: {res.status_code}")
+            
+            # 休息 2 秒，避免被 Dcard 偵測為攻擊
+            time.sleep(2)
+            
+        except Exception as e:
+            print(f"發生錯誤: {e}")
+
+    if all_new_data:
+        df = pd.DataFrame(all_new_data)
+        # 存檔邏輯
+        file_name = 'competitor_data.csv'
+        if not os.path.isfile(file_name):
+            df.to_csv(file_name, index=False, encoding='utf-8-sig')
+        else:
+            df.to_csv(file_name, mode='a', header=False, index=False, encoding='utf-8-sig')
+        print(f"成功儲存 {len(all_new_data)} 筆跨品牌數據！")
+
+if __name__ == "__main__":
+    fetch_competitors()
