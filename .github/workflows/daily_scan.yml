@@ -23,8 +23,12 @@ jobs:
       - name: Run scraper
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: python scraper.py
-
+        run: |
+          # 先列出目前檔案，讓我們在 Log 裡看清楚路徑
+          ls -R
+          # 執行爬蟲（確保 scraper.py 在根目錄）
+          python scraper.py
+          
       - name: Commit and push
         run: |
           git config --local user.email "action@github.com"
