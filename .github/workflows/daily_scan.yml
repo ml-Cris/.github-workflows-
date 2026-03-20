@@ -2,33 +2,50 @@ name: Daily Dcard Scraper
 
 on:
   schedule:
-    - cron: '0 0 * * *'
-  workflow_dispatch:
+    - cron: '0 0 * * *' # 台灣時間每天早上 8 點自動執行
+  workflow_dispatch:     # 讓你可以手動點擊按鈕執行
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    # 賦予 GitHub Actions 寫入權限，確保能把 CSV 存回倉庫
+    permissions:
+      contents: write
+      
     steps:
-      - name: Checkout code
+      - name: 1. 檢出代碼 (Checkout)
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: 2. 設定 Python 環境
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
-        run: pip install requests pandas google-generativeai
+      - name: 3. 安裝所有必要套 entry (Dependencies)
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pandas google-generativeai curl_cffi
 
-      - name: Run scraper
+      - name: 4. 執行 Gemini AI 爬蟲腳本
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python scraper.py
+        run: |
+          # 檢查檔案是否存在 (Debug 用)
+          ls -R
+          # 正確執行 Python 腳本
+          python scraper.py
 
-      - name: Commit and push
+      - name: 5. 提交並推送數據更新 (Git Push)
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add competitor_data.csv || echo "No data file to add"
-          git commit -m "Auto update with Gemini" || exit 0
-          git push
+          # 檢查是否有產生 competitor_data.csv，有的話才提交
+          if [ -f "competitor_data.csv" ]; then
+            git add competitor_data.csv
+            git commit -m "Auto update Dcard sentiment data [$(date)]" || echo "No changes to commit"
+            git push
+          else
+            echo "錯誤：未找到 competitor_data.csv 檔案，請檢查爬蟲日誌。"
+            exit 1
+          fi
