@@ -23,7 +23,7 @@ jobs:
       - name: Run scraper
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python scraper.py
+        run: curl_cffi
 
       - name: Commit and push
         run: |
