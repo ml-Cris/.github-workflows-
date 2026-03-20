@@ -1,4 +1,4 @@
-requests
+curl_cffi
 pandas
 google-generativeai
 streamlit
